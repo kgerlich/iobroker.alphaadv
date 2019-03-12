@@ -30,10 +30,10 @@
         "materialize": true,
         "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/kgerlich/ioBroker.alphaadv/master/admin/alphaadv.png",
-        "keywords": ["alphaadv", "LED"],
+        "keywords": ["alphaadvantage", "stock"],
         "readme": "https://github.com/kgerlich/ioBroker.alphaadv/blob/master/README.md",
         "loglevel": "info",
-        "type": "household",
+        "type": "misc-data",
         "license": "MIT",
         "messagebox": false
     },
