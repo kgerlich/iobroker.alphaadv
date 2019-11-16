@@ -122,15 +122,15 @@ function query(url, cb_data) {
         res.on('end', function(){
             var fbResponse = JSON.parse(body);
             console.log("Got a response: ", fbResponse);
-            cb_data.decoder(fbResponse, cb_data.cb);
+            cb_data.decoder(cb_data, fbResponse);
     });
     }).on('error', function(e){
         console.log("Got an error: ", e);
     });    
 }
 
-function get_global_quote_decoder(fbResponse, cb) {
-    var data = fbResponse["Global Quote"]            
+function get_global_quote_decoder(cb_data, fbResponse) {
+    var data = fbResponse["Global Quote"]
 
     var symbol = data['01. symbol'];
     var open = data['02. open'];
@@ -142,7 +142,9 @@ function get_global_quote_decoder(fbResponse, cb) {
     var prev = data['08. previous close'];
     var change = data['09. change'];
     var change_percent = data['10. change percent'];
-    cb({
+    cb_data.cb(
+        cb_data.symbol,
+        {
         'symbol': symbol,
         'open': open, 
         'high': high, 
@@ -156,12 +158,12 @@ function get_global_quote_decoder(fbResponse, cb) {
     });
 }
 
-function create_global_quote_states(data) {
+function create_global_quote_states(symbol, data) {
     adapter.log.debug(data);
-    create_indicator('symbols', 'Stock symbols', null);
-    create_indicator('symbols.day', 'GLOBAL_QUOTES', null);
+    create_indicator( symbol, symbol, null);
+    create_indicator(symbol + '.day', symbol + ' GLOBAL_QUOTES', null);
     for (var key in data) {
-        create_indicator('symbols.day.' + key + '.date', null, data[key]);
+        create_indicator(symbol + '.day.' + key , key, data[key]);
     }
 }
 
@@ -170,6 +172,7 @@ function get_global_quote(symbol) {
 
     var url = get_function_url(symbol, 'GLOBAL_QUOTE');
     var cb_data = {
+        'symbol': symbol,
         'cb': create_global_quote_states,
         'decoder': get_global_quote_decoder
     };
