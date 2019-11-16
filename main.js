@@ -205,6 +205,11 @@ function main() {
     // in this all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
 
+    if(!adapter.config.apikey) {
+        adapter.log.info('You need to set an API key!');
+        return;
+    }
+    
     // fill up adapter objects
     update_stock_data();
 }
