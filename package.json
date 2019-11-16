@@ -48,7 +48,7 @@
   "keywords": [
     "ioBroker",
     "alphaadv",
-    "stocks",
+    "stocks"
   ],
   "license": "MIT",
   "main": "main.js",
