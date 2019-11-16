@@ -38,9 +38,7 @@
         "messagebox": false
     },
     "native": {
-        "blid": "*",
-        "password": "*",
-        "ip": "*"
+        "apikey": ""
     },
     "instanceObjects": [
         {

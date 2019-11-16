@@ -3,6 +3,7 @@
 <!-- these 4 files always have to be included -->
 <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
 <link rel="stylesheet" type="text/css" href="../../css/adapter.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
@@ -15,43 +16,75 @@
 <script type="text/javascript" src="../../lib/js/materialize.js"></script>
 <script type="text/javascript" src="../../js/adapter-settings.js"></script>
 <script type="text/javascript" src="words.js"></script>
- <style>
-  .m .col .select-wrapper+label {
-   top: -26px;  
-  }
-    .m span{
-        font-size: 0.9em;
-    }
-    img {
-        width: 90px;
-        height: 90px;
-        background: 50% no-repeat;
-        border: 1px solid black;
-        border-radius: 5px;
-    } </style>
+<style>
+.m .col .select-wrapper+label {
+top: -26px;  
+}
+.m span{
+    font-size: 0.9em;
+}
+img {
+    width: 90px;
+    height: 90px;
+    background: 50% no-repeat;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+#newentrytext, #apikey{
+    background-color: lightskyblue;
+}
+</style>
 <!-- you have to define 2 functions in the global scope: -->
 <script type="text/javascript">
+    function get_table_entry(val) {
+        return '<tr id="' + val + '"><td class="value"><button type="button" id="delnewentry_' + val + '"><i class="fa fa-trash"></i></button>' + val + ' </td></tr>';
+    }
+
     // the function loadSettings has to exist ...
     function load(settings, onChange) {
         // example: select elements with id=key and class=value and insert value
         if (!settings) return;
 
+        // handle plus click...
+        $('#addnewentry').click( function() {
+            var val = $('#newentrytext').val();
+            if(val) {
+                if (!settings['symbols'].includes(val)) {
+                    console.log('symbol added: ' + val);
+                    $('#stocks').append(get_table_entry(val));
+                    onChange();
+                } else {
+                    console.log('symbol not added as already present!');
+                }
+            }
+        });
+
+        // restore settings 
         $('.value').each(function () {            
             var $key = $(this);
             var id = $key.attr('id');
-            if ($key.attr('type') === 'checkbox') {
-		        // do not call onChange direct, because onChange could expect some arguments
-                $key.prop('checked', settings[id]).on('change', function() {
+            // do not call onChange direct, because onChange could expect some arguments
+            $key.val(settings[id]).on('change', function() {
+                onChange();
+            }).on('keyup', function() {
+                onChange();
+            });
+        });
+
+        // restore symbols table from settings
+        settings['symbols'].forEach( function(item, index) {
+            console.log(index + ' ' + item.trim());
+            $('#stocks').append(get_table_entry(item.trim()));
+            var $i = $(('#delnewentry_' + item.trim()));
+            $i.click( function() {
+                console.log('delete ' + item.trim());
+                // don't trim item...
+                var index = settings['symbols'].indexOf(item);
+                if (index > -1) {
+                    $(('tr#' + item.trim())).remove();
                     onChange();
-                });
-            } else {
-		        // do not call onChange direct, because onChange could expect some arguments
-                $key.val(settings[id]).on('change', function() {
-                    onChange();
-                }).on('keyup', function() {
-                    onChange();
-                });
-            }
+                }
+            });
         });
         onChange(false);
         M.updateTextFields();  // function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
@@ -62,11 +95,16 @@
     function save(callback) {
         // example: select elements with class=value and build settings object
         var obj = {};
+        obj['symbols'] = [];
         $('.value').each(function () {
             var $this = $(this);
-            if ($this.attr('type') === 'checkbox') {
-                obj[$this.attr('id')] = $this.prop('checked');
+            if ($this.is('td')) {
+                console.log($this.text());
+                if (!obj['symbols'].includes($this.text().trim())) {
+                    obj['symbols'].push($this.text().trim());
+                }
             } else {
+                console.log($this.val());
                 obj[$this.attr('id')] = $this.val();
             }
         });
@@ -88,9 +126,20 @@
             </div>
             <div class="row">
                 <table>
-                    <tr><td class="translate">APIKEY</td><td><input class="value" id="apikey"/></td></tr>
+                    <tr><td class="translate">APIKEY</td><td><input class="value" id="apikey" placeholder="Enter API key"/></td></tr>
                 </table>
             </div>
+            <div class="row">
+                <span>
+                        <input id="newentrytext" placeholder="Enter symbol name"/><button type="button" id="addnewentry"><i class="fa fa-plus-circle"></i></button>
+                </span>
+                <table>
+                    <thead>
+                        <tr><th>Stock symbol</th></tr>
+                    </thead>
+                    <tbody id="stocks"></tbody>
+                </table>
+                </div>
         </div>
     </div>
 </body>
