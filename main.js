@@ -116,6 +116,4 @@ function main() {
 
     // in this all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
-
-    init_device();
 }
