@@ -121,41 +121,48 @@ function query(url, cb_data) {
     
         res.on('end', function(){
             var fbResponse = JSON.parse(body);
-            console.log("Got a response: ", fbResponse);
+            adapter.log.debug("Got a response: " + util.inspect(fbResponse, {showHidden: false, depth: null}));
             cb_data.decoder(cb_data, fbResponse);
     });
     }).on('error', function(e){
-        console.log("Got an error: ", e);
+        adapter.log.debug("Got an error: " + util.inspect(e, {showHidden: false, depth: null}));
     });    
 }
 
 function get_global_quote_decoder(cb_data, fbResponse) {
-    var data = fbResponse["Global Quote"]
+    try {
+        var data = fbResponse["Global Quote"]
 
-    var symbol = data['01. symbol'];
-    var open = data['02. open'];
-    var high = data['03. high'];
-    var low = data['04. low'];
-    var price = data['05. price'];
-    var vol  = data['06. volume'];
-    var date = data['07. latest trading day'];
-    var prev = data['08. previous close'];
-    var change = data['09. change'];
-    var change_percent = data['10. change percent'];
-    cb_data.cb(
-        cb_data.symbol,
-        {
-        'symbol': symbol,
-        'open': open, 
-        'high': high, 
-        'low': low, 
-        'price': price, 
-        'vol': vol, 
-        'date': date, 
-        'prev': prev, 
-        'change': change, 
-        'percent': change_percent
-    });
+        var symbol = data['01. symbol'];
+        var open = data['02. open'];
+        var high = data['03. high'];
+        var low = data['04. low'];
+        var price = data['05. price'];
+        var vol  = data['06. volume'];
+        var date = data['07. latest trading day'];
+        var prev = data['08. previous close'];
+        var change = data['09. change'];
+        var change_percent = data['10. change percent'];
+        cb_data.cb(
+            cb_data.symbol,
+            {
+                'symbol': symbol,
+                'open': open, 
+                'high': high, 
+                'low': low, 
+                'price': price, 
+                'vol': vol, 
+                'date': date, 
+                'prev': prev, 
+                'change': change, 
+                'percent': change_percent
+            });
+    } catch(e) {
+        adapter.log.debug("Exception caught: " + util.inspect(e, {showHidden: false, depth: null}));
+        if ('Note' in fbResponse) {
+            adapter.log.debug("Note: " + fbResponse.Note);
+        }
+    }
 }
 
 function create_global_quote_states(symbol, data) {
@@ -168,7 +175,7 @@ function create_global_quote_states(symbol, data) {
 }
 
 function get_global_quote(symbol) {
-    adapter.log.info('get_global_quote(): ' + symbol);
+    adapter.log.debug('get_global_quote(): ' + symbol);
 
     var url = get_function_url(symbol, 'GLOBAL_QUOTE');
     var cb_data = {
@@ -181,6 +188,8 @@ function get_global_quote(symbol) {
 }
 
 function update_stock_data() {
+    create_indicator( 'numsym', 'Number of symbols', adapter.config.symbols.length);
+
     adapter.config.symbols.forEach( function(item, index) {
         get_global_quote(item.trim());
     });
@@ -191,7 +200,7 @@ function main() {
 
     // The adapters config (in the instance object everything under the attribute "native") is accessible via
     // adapter.config:
-    adapter.log.info('config APIKEY: ' + adapter.config.apikey);
+    adapter.log.debug('config APIKEY: ' + adapter.config.apikey);
 
     // in this all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
@@ -199,40 +208,3 @@ function main() {
     // fill up adapter objects
     update_stock_data();
 }
-
-
-
-
-/// 
-
-//function get_time_series_daily(symbol) {
-    //     adapter.log.info('get_aa(): ' + symbol);
-    //     var url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&datatype=json&symbol=' + symbol + '&interval=1min&apikey=' + adapter.config.apikey.trim();
-    //     https.get(url, function(res){
-    //         var body = '';
-        
-    //         res.on('data', function(chunk){
-    //             body += chunk;
-    //         });
-        
-    //         res.on('end', function(){
-    //             var fbResponse = JSON.parse(body);
-    //             console.log("Got a response: ", fbResponse);
-    //             var meta_data = fbResponse["Meta Data"];
-    //             var data = fbResponse["Time Series (Daily)"]            
-    //             var last_refreshed = meta_data['3. Last Refreshed'];
-    //             var i = data[last_refreshed];
-    //             var value_open = i['1. open'];
-    //             var value_close = i['4. close'];
-    //             var volume = i['5. volume'];
-    //             create_indicator('symbols', 'Stock symbols', null);
-    //             create_indicator('symbols.' + symbol + '.date', 'Date', last_refreshed);
-    //             create_indicator('symbols.' + symbol + '.open', 'Value at open', value_open);
-    //             create_indicator('symbols.' + symbol + '.close', 'Value at close', value_close);
-    //             create_indicator('symbols.' + symbol + '.volume', 'Days volume', volume);
-    //     });
-    //     }).on('error', function(e){
-    //         console.log("Got an error: ", e);
-    //     });    
-    // }
-    
