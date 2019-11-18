@@ -2,31 +2,6 @@
  *
  * alphaadvantage adapter
  *
- *
- *  file io-package.json comments:
- *
- *  {
- *      "common": {
- *          "name":         "alphaadv",                  // name has to be set and has to be equal to adapters folder name and main file name excluding extension
- *          "version":      "0.0.0",                    // use "Semantic Versioning"! see http://semver.org/
- *          "title":        "Node.js alphaadv Adapter",  // Adapter title shown in User Interfaces
- *          "authors":  [                               // Array of authord
- *              "name <mail@alphaadv.com>"
- *          ]
- *          "desc":         "alphaadvantage adapter",          // Adapter description shown in User Interfaces. Can be a language object {de:"...",ru:"..."} or a string
- *          "platform":     "Javascript/Node.js",       // possible values "javascript", "javascript/Node.js" - more coming
- *          "mode":         "daemon",                   // possible values "daemon", "schedule", "subscribe"
- *          "materialize":  true,                       // support of admin3
- *          "schedule":     "0 0 * * *"                 // cron-style schedule. Only needed if mode=schedule
- *          "loglevel":     "info"                      // Adapters Log Level
- *      },
- *      "native": {                                     // the native object is available via adapter.config in your adapters code - use it for configuration
- *          "test1": true,
- *          "test2": 42,
- *          "mySelect": "auto"
- *      }
- *  }
- *
  */
 
 /* jshint -W097 */// jshint strict:false
@@ -45,21 +20,7 @@ const https = require('https');
 const util = require('util')
 const prettyMs = require('pretty-ms');
 
-function format(fmt, ...args) {
-    if (!fmt.match(/^(?:(?:(?:[^{}]|(?:\{\{)|(?:\}\}))+)|(?:\{[0-9]+\}))+$/)) {
-        throw new Error('invalid format string.');
-    }
-    return fmt.replace(/((?:[^{}]|(?:\{\{)|(?:\}\}))+)|(?:\{([0-9]+)\})/g, (m, str, index) => {
-        if (str) {
-            return str.replace(/(?:{{)|(?:}})/g, m => m[0]);
-        } else {
-            if (index >= args.length) {
-                throw new Error('argument index is out of range in format');
-            }
-            return args[index];
-        }
-    });
-}
+const CALL_COUNTER_NAME = "calls";
 
 // is called when adapter shuts down - callback has to be called under any circumstances!
 adapter.on('unload', function (callback) {
@@ -95,11 +56,20 @@ function create_indicator(name, description, value) {
                 native: {}
             });
             if (value != null) {
-                adapter.setState(name, value, true);
+                adapter.setStateChanged(name, value, true);
             }
         }
     });
-    adapter.setState(name, value, true);
+    adapter.setStateChanged(name, value, true);
+}
+
+function increment_call_counter() {
+    adapter.getState(CALL_COUNTER_NAME , (err, state) => {
+        adapter.log.debug("Calls = " + state.val);
+        var date = new Date(state.ts);
+        console.log(date);
+        adapter.setState(CALL_COUNTER_NAME, state.val + 1, 1);
+    });
 }
 
 function get_api_key() {
@@ -122,6 +92,7 @@ function query(url, cb_data) {
         res.on('end', function(){
             var fbResponse = JSON.parse(body);
             adapter.log.debug("Got a response: " + util.inspect(fbResponse, {showHidden: false, depth: null}));
+            increment_call_counter();
             cb_data.decoder(cb_data, fbResponse);
     });
     }).on('error', function(e){
@@ -187,20 +158,26 @@ function get_global_quote(symbol) {
     query(url, cb_data);
 }
 
-function update_stock_data() {
-    create_indicator( 'numsym', 'Number of symbols', adapter.config.symbols.length);
+function update_stock_data(timeout) {
+    // handle invalid timeout
+    if (timeout == undefined || timeout < 15*1000) {
+        timeout = 120*1000; // 120 sec
+    } 
+    create_indicator('numsym', 'Number of symbols', adapter.config.symbols.length);
+    create_indicator('timeout', 'Time between refreshes', timeout);
+    create_indicator(CALL_COUNTER_NAME, 'API calls made', 0);
 
     adapter.config.symbols.forEach( function(item, index) {
         get_global_quote(item.trim());
     });
-    setTimeout(update_stock_data, 15*1000);
+    setTimeout(update_stock_data, timeout);
 }
 
 function main() {
-
     // The adapters config (in the instance object everything under the attribute "native") is accessible via
     // adapter.config:
     adapter.log.debug('config APIKEY: ' + adapter.config.apikey);
+    adapter.log.debug('config timeout: ' + adapter.config.timeout);
 
     // in this all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
@@ -211,5 +188,5 @@ function main() {
     }
     
     // fill up adapter objects
-    update_stock_data();
+    update_stock_data(adapter.config.timeout);
 }

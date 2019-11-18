@@ -30,6 +30,9 @@ img {
     border: 1px solid black;
     border-radius: 5px;
 }
+i.padded {
+    padding-right: 1em;
+}
 #newentrytext, #apikey{
     background-color: lightskyblue;
 }
@@ -37,7 +40,7 @@ img {
 <!-- you have to define 2 functions in the global scope: -->
 <script type="text/javascript">
     function get_table_entry(val) {
-        return '<tr id="' + val + '"><td class="value"><button type="button" id="delnewentry_' + val + '"><i class="fa fa-trash"></i></button>' + val + ' </td></tr>';
+        return '<tr id="' + val + '"><td class="value"><button type="button" id="delnewentry_' + val + '"><i class="fa fa-trash"></i></button> ' + val + '</td></tr>';
     }
 
     // the function loadSettings has to exist ...
@@ -126,12 +129,17 @@ img {
             </div>
             <div class="row">
                 <table>
-                    <tr><td class="translate">APIKEY</td><td><input class="value" id="apikey" placeholder="Enter API key"/></td></tr>
+                    <tr><td class="translate"><i class="fa fa-key fa-2x padded"></i>APIKEY</td><td></i><input class="value" id="apikey" placeholder="Enter API key"/></td></tr>
+                </table>
+            </div>
+            <div class="row">
+                <table>
+                    <tr><td class="translate"><i class="fa fa-clock-o fa-2x padded"></i>Timeout</td><td></i><input class="value" id="timeout" placeholder="Enter time between refreshes in seconds. (Default = 120sec) "/></td></tr>
                 </table>
             </div>
             <div class="row">
                 <span>
-                        <input id="newentrytext" placeholder="Enter symbol name"/><button type="button" id="addnewentry"><i class="fa fa-plus-circle"></i></button>
+                        <input id="newentrytext" placeholder="Enter symbol name"/><button type="button" id="addnewentry"><i class="fa fa-plus-circle fa-2x"></i></button>
                 </span>
                 <table>
                     <thead>
